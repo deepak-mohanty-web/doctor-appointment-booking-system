@@ -9,11 +9,15 @@ import MyAppointments from "./pages/MyAppointments";
 import Appointments from "./pages/Appointments";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import { Toaster } from "react-hot-toast";
+import "react-toastify/dist/ReactToastify.css";
+import Sucess from "./pages/Sucess";
 
 function App() {
   return (
     <div className="mx-4 sm:mx-[10%]">
       <Navbar />
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/doctors" element={<Doctor />} />
@@ -24,6 +28,7 @@ function App() {
         <Route path="/my-profile" element={<ProfilePage />} />
         <Route path="/my-appointments" element={<MyAppointments />} />
         <Route path="/appointments/:docId" element={<Appointments />} />
+        <Route path="/success" element={<Sucess />} />
       </Routes>
       <Footer />
     </div>

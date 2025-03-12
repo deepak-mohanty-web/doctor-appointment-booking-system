@@ -1,15 +1,21 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useState } from "react";
+import { useContext } from "react";
+import { AppContext } from "../context/AppContext";
 function Navbar() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
-  const [token, setToken] = useState(true);
+  const { token, setToken,userData } = useContext(AppContext);
+  const logOut = () => {
+    setToken(false);
+    localStorage.removeItem("token");
+  };
   return (
     <div className="flex items-center justify-between py-4 text-sm border-b border-b-gray-400 mb-5">
       <img
         onClick={() => navigate("/")}
-        className="w-44 cursor-pointer"
+        className="w-60 cursor-pointer"
         src={assets.logo}
         alt=""
       />
@@ -32,9 +38,9 @@ function Navbar() {
         </NavLink>
       </ul>
       <div className="flex items-center gap-4">
-        {token ? (
+        {token && userData ? (
           <div className="flex items-center gap-2 group relative cursor-pointer">
-            <img className="w-8 rounded-full" src={assets.profile_pic} alt="" />
+            <img className="w-8 rounded-full" src={userData.image} alt="" />
             <img className="w-2.5" src={assets.dropdown_icon} alt="" />
             <div className="top-0 right-0 absolute pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block transition-all duration-300">
               <div className="min-w-48 bg-stone-100 flex gap-4 flex-col p-4 rounded">
@@ -50,10 +56,7 @@ function Navbar() {
                 >
                   My Appointments
                 </p>
-                <p
-                  onClick={() => setToken(false)}
-                  className="cursor-pointer hover:text-black"
-                >
+                <p onClick={logOut} className="cursor-pointer hover:text-black">
                   {" "}
                   Logout
                 </p>

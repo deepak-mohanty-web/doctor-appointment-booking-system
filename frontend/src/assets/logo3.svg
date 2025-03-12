@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80">
+  <!-- Refined medical symbol background -->
+  <circle cx="40" cy="40" r="25" fill="#3055A3" />
+  
+  <!-- Subtle gradient overlay for depth -->
+  <circle cx="40" cy="40" r="22" fill="url(#grad1)" />
+  
+  <!-- Stethoscope symbol - refined, elegant version -->
+  <path d="M28 33 C28 29, 31 26, 34.5 26 C38 26, 41 29, 41 33 L41 44 C41 48, 44 51, 48 51 C52 51, 55 48, 55 44 C55 40, 52 37, 48 37" 
+        stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" />
+  <circle cx="26" cy="33" r="3.5" fill="white" />
+  
+  <!-- Connection dot accents -->
+  <circle cx="41" cy="26" r="1.5" fill="white" />
+  <circle cx="55" cy="44" r="1.5" fill="white" />
+  
+  <!-- Text part of the logo - modern sans-serif font -->
+  <text x="75" y="47" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="28" fill="#0A2651">DocConnect</text>
+  
+  <!-- Subtle accent line -->
+  <line x1="75" y1="53" x2="230" y2="53" stroke="#3055A3" stroke-width="1" />
+  
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3055A3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A377A;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
