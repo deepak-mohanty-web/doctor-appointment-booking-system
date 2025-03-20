@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
-import razorpay from 'razorpay'
+import razorpay from "razorpay";
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -156,34 +156,35 @@ const bookAppointment = async (req, res) => {
   }
 };
 
-
 //api for cancle appointment
 const cancleAppointment = async (req, res) => {
   try {
     const { userId, appointmentId } = req.body;
-    const appointmentData = await appointmentModel.findById(appointmentId)
+    const appointmentData = await appointmentModel.findById(appointmentId);
 
     //verify appointment user
     if (appointmentData.userId !== userId) {
-      return res.json({ success: false, message: "Unauthorized action" })
+      return res.json({ success: false, message: "Unauthorized action" });
     }
-    await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      cancelled: true,
+    });
     //releasing doctor slot
 
     const { docId, slotTime, slotDate } = appointmentData;
-    const doctorData = await doctorModel.findById(docId)
-    let slots_booked = doctorData.slots_booked
-    slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked })
+    const doctorData = await doctorModel.findById(docId);
+    let slots_booked = doctorData.slots_booked;
+    slots_booked[slotDate] = slots_booked[slotDate].filter(
+      (e) => e !== slotTime
+    );
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
-    res.json({ success: true, message: "Appointment Cancelled" })
-
+    res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}
-
+};
 
 //api for get user appointment
 const listAppointment = async (req, res) => {
@@ -198,56 +199,117 @@ const listAppointment = async (req, res) => {
 };
 const razorpayInstance = new razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-})
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 //api to make payment of appointment using razorpay
 const paymentRazorpay = async (req, res) => {
   try {
-    const { appointmentId } = req.body
+    const { appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
 
     if (!appointmentData || appointmentData.cancelled) {
       return res.json({
         sucess: false,
-        message: "Appointment cancelled or not found"
-      })
+        message: "Appointment cancelled or not found",
+      });
     }
 
     //creating option for razorapy payment
     const options = {
       amount: appointmentData.amount * 100,
       currency: process.env.CURRENCY,
-      receipt: appointmentId
-
-    }
+      receipt: appointmentId,
+    };
 
     //creation of an order
-    const order = await razorpayInstance.orders.create(options)
-    res.json({ success: true, order })
-  }
-  catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
-  }
-}
-//api for verify razorpay
-const verifyRazorpay = async (req, res) => {
-  try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    const ordersInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
-    if (ordersInfo.status === "paid") {
-      await appointmentModel.findByIdAndUpdate(ordersInfo.receipt, { payment: true })
-      res.json({ success: true, message: "Payment Successful" })
-    }
-    else {
-      res.json({ success: false, message: "Payment Failed" })
-    }
-
+    const order = await razorpayInstance.orders.create(options);
+    res.json({ success: true, order });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}
+};
+//api for verify razorpay
+const verifyRazorpay = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
+    const ordersInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
+    if (ordersInfo.status === "paid") {
+      await appointmentModel.findByIdAndUpdate(ordersInfo.receipt, {
+        payment: true,
+      });
+      res.json({ success: true, message: "Payment Successful" });
+    } else {
+      res.json({ success: false, message: "Payment Failed" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+// api for reschdule
+const reschedule = async (req, res) => {
+  try {
+    const { appointmentId, newSlotDate, newSlotTime } = req.body;
+
+    if (!appointmentId || !newSlotDate || !newSlotTime) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found" });
+    }
+
+    if (appointment.cancelled || appointment.isCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot reschedule a cancelled or completed appointment",
+      });
+    }
+
+    appointment.slotDate = newSlotDate;
+    appointment.slotTime = newSlotTime;
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: "Appointment rescheduled successfully",
+      appointment,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+const userPhone = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Fetch the user from the database
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    // Return the user's phone number
+    res.status(200).json({ success: true, phoneNumber: user.phone });
+  } catch (error) {
+    console.error("Error fetching user phone number:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch user phone number." });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -257,5 +319,7 @@ export {
   listAppointment,
   cancleAppointment,
   paymentRazorpay,
-  verifyRazorpay
+  verifyRazorpay,
+  reschedule,
+  userPhone,
 };

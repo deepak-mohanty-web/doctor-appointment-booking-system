@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useState } from "react";
 import { useContext } from "react";
@@ -6,7 +6,7 @@ import { AppContext } from "../context/AppContext";
 function Navbar() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
-  const { token, setToken,userData } = useContext(AppContext);
+  const { token, setToken, userData } = useContext(AppContext);
   const logOut = () => {
     setToken(false);
     localStorage.removeItem("token");
@@ -34,6 +34,10 @@ function Navbar() {
         </NavLink>
         <NavLink to="/contact">
           <li className="py-1">Contact</li>
+          <hr className="border-none outline-none h-0.5 bg-[#5F6FFF] w-3/5 m-auto hidden" />
+        </NavLink>
+        <NavLink to="/emergency-contact">
+          <li className="py-1">SOS Contacts</li>
           <hr className="border-none outline-none h-0.5 bg-[#5F6FFF] w-3/5 m-auto hidden" />
         </NavLink>
       </ul>

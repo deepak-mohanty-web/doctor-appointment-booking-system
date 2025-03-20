@@ -8,7 +8,9 @@ import {
   listAppointment,
   cancleAppointment,
   paymentRazorpay,
-  verifyRazorpay
+  verifyRazorpay,
+  reschedule,
+  userPhone
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";
@@ -29,4 +31,6 @@ userRouter.get("/list-appointment", authUser, listAppointment);
 userRouter.post("/cancel-appointment", authUser, cancleAppointment)
 userRouter.post("/payment-razorpay", authUser, paymentRazorpay)
 userRouter.post("/verifyRazorpay", authUser, verifyRazorpay)
+userRouter.post("/reschedule-appointment", authUser, reschedule)
+userRouter.get("/user-phone", authUser, userPhone)
 export default userRouter;

@@ -12,8 +12,13 @@ import Footer from "./components/Footer";
 import { Toaster } from "react-hot-toast";
 import "react-toastify/dist/ReactToastify.css";
 import Sucess from "./pages/Sucess";
+import ChatBot from "./pages/chatbot/ChatBot";
+import { useContext } from "react";
+import { AppContext } from "./context/AppContext";
+import EmergencyContact from "./pages/EmergencyContect";
 
 function App() {
+  const { token } = useContext(AppContext);
   return (
     <div className="mx-4 sm:mx-[10%]">
       <Navbar />
@@ -29,7 +34,9 @@ function App() {
         <Route path="/my-appointments" element={<MyAppointments />} />
         <Route path="/appointments/:docId" element={<Appointments />} />
         <Route path="/success" element={<Sucess />} />
+        <Route path="/emergency-contact" element={<EmergencyContact />} />
       </Routes>
+      {token && <ChatBot />}
       <Footer />
     </div>
   );

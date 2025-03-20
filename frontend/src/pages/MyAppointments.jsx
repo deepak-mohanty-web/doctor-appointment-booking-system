@@ -3,11 +3,16 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { PuffLoader } from "react-spinners";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function MyAppointments() {
   const { backendUrl, token, getAllDoctorsData } = useContext(AppContext);
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
 
   const getUserAppointment = async () => {
     setIsLoading(true);
@@ -18,7 +23,6 @@ function MyAppointments() {
       );
 
       if (data.success && Array.isArray(data.appointmentData)) {
-        console.log(data.appointmentData);
         setAppointments(data.appointmentData.reverse());
       } else {
         setAppointments([]);
@@ -39,15 +43,19 @@ function MyAppointments() {
     }
   }, [token]);
 
-  const cancelAppointment = async (appointmentId) => {
+  const handleCancelClick = (appointmentId) => {
+    setSelectedAppointmentId(appointmentId);
+    setShowCancelModal(true);
+  };
+
+  const cancelAppointment = async () => {
     try {
-      console.log(appointmentId);
       const { data } = await axios.post(
         backendUrl + "/api/user/cancel-appointment",
-        { appointmentId },
+        { appointmentId: selectedAppointmentId },
         { headers: { token } }
       );
-      console.log(data);
+
       if (data.success) {
         toast.success(data.message, {
           icon: "☹️",
@@ -65,8 +73,12 @@ function MyAppointments() {
         "Something went wrong";
 
       toast.error(errorMessage);
+    } finally {
+      setShowCancelModal(false);
+      setSelectedAppointmentId(null);
     }
   };
+
   const initPay = (order) => {
     const options = {
       key: import.meta.env.RAZORPAY_KEY_ID,
@@ -105,6 +117,7 @@ function MyAppointments() {
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
+
   const appointmentRazorpay = async (appointmentId) => {
     const { data } = await axios.post(
       backendUrl + "/api/user/payment-razorpay",
@@ -115,6 +128,44 @@ function MyAppointments() {
       initPay(data.order);
     }
   };
+
+  const filterAppointments = () => {
+    console.log("Current Filter:", filter);
+    return appointments.filter((item) => {
+      if (filter === "all") return true;
+      if (filter === "upcoming") return !item.cancelled && !item.isCompleted;
+      if (filter === "completed") return item.isCompleted === true;
+      if (filter === "cancelled") return item.cancelled === true;
+      if (filter === "paid") return item.payment === true;
+      return false;
+    });
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Appointment Report", 14, 10);
+
+    const tableData = filterAppointments().map((item, index) => [
+      index + 1,
+      item.docData.name,
+      item.docData.speciality,
+      item.slotDate,
+      item.slotTime,
+      item.isCompleted
+        ? "Completed"
+        : item.cancelled
+        ? "Cancelled"
+        : "Upcoming",
+    ]);
+
+    autoTable(doc, {
+      head: [["S.No", "Doctor Name", "Speciality", "Date", "Time", "Status"]],
+      body: tableData,
+    });
+
+    doc.save("Appointment_Report.pdf");
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center">
@@ -128,9 +179,33 @@ function MyAppointments() {
       <p className="pb-3 mt-12 border-b text-zinc-700 font-medium">
         My Appointments
       </p>
+
+      {/* Filter Buttons */}
+      <div className="md:flex gap-4 mb-4 mt-4">
+        {"all upcoming completed cancelled paid".split(" ").map((type) => (
+          <button
+            key={type}
+            className={`px-4 py-2 rounded ${
+              filter === type ? "bg-blue-500 text-white" : "border"
+            }`}
+            onClick={() => setFilter(type)}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
+
+        <button
+          onClick={downloadPDF}
+          className="px-4 py-2 rounded bg-green-500 text-white flex items-end"
+        >
+          Download Report
+        </button>
+      </div>
+
+      {/* Appointment List */}
       <div>
-        {Array.isArray(appointments) && appointments.length > 0 ? (
-          appointments.map((item, index) => (
+        {filterAppointments().length > 0 ? (
+          filterAppointments().map((item, index) => (
             <div
               className="grid grid-cols-[1fr_2fr] sm:flex gap-4 sm:gap-6 py-2 border-b"
               key={index}
@@ -145,17 +220,11 @@ function MyAppointments() {
                   {item.docData.name}
                 </p>
                 <p>{item.docData.speciality}</p>
-                <p className="font-medium  text-zinc-700 mt-1">Address:</p>
-                <p className="text-xs">{item.docData.address.line1}</p>
-                <p className="text-xs">{item.docData.address.line2}</p>
-                <p className="text-sm mt-1">
-                  <span className="font-medium text-zinc-700 text-sm">
-                    Date & Time:
-                  </span>
+                <p className="font-medium text-zinc-700 mt-1">Date & Time:</p>
+                <p>
                   {item.slotDate} | {item.slotTime}
                 </p>
               </div>
-              <div></div>
               <div className="flex flex-col justify-end gap-2">
                 {!item.cancelled && item.payment && !item.isCompleted && (
                   <button className="text-sm text-center text-stone-500 border sm:min-w-48 rounded py-2 bg-indigo-100">
@@ -172,8 +241,8 @@ function MyAppointments() {
                 )}
                 {!item.cancelled && !item.isCompleted && (
                   <button
-                    onClick={() => cancelAppointment(item._id)}
-                    className="text-sm text-center text-stone-700 border sm:min-w-48 rounded py-2  hover:bg-red-500 hover:text-white transition-all duration-300"
+                    onClick={() => handleCancelClick(item._id)}
+                    className="text-sm text-center text-stone-700 border sm:min-w-48 rounded py-2 hover:bg-red-500 hover:text-white transition-all duration-300"
                   >
                     Cancel appointment
                   </button>
@@ -197,7 +266,34 @@ function MyAppointments() {
           </div>
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Cancel Appointment</h3>
+            <p className="mb-6">
+              Are you sure you want to cancel this appointment?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="px-4 py-2 border rounded hover:bg-gray-100"
+              >
+                No, Keep It
+              </button>
+              <button
+                onClick={cancelAppointment}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 export default MyAppointments;

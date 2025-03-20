@@ -24,9 +24,9 @@ function Header() {
         </a>
       </div>
       {/* right side  */}
-      <div className="md:w-1/2 relative">
+      <div className=" md:w-1/2 relative">
         <img
-          className="md:absolute bottom-0 h-auto rounded-lg"
+          className="md:absolute bottom-0 h-[80%] w-[100%] rounded-lg"
           src={assets.header_img}
           alt=""
         />
