@@ -6,7 +6,9 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
-import razorpay from "razorpay";
+import Razorpay from "razorpay";
+
+
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -197,10 +199,11 @@ const listAppointment = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
-const razorpayInstance = new razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+//razorpay payment config
+const razorpayInstance = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
 //api to make payment of appointment using razorpay
 const paymentRazorpay = async (req, res) => {
   try {

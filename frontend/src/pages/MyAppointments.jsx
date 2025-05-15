@@ -79,43 +79,77 @@ function MyAppointments() {
     }
   };
 
-  const initPay = (order) => {
+  const initPay = async (order) => {
+    // Validate the order object first
+    if (!order || !order.id || !order.amount || !order.currency) {
+      toast.error("Invalid payment order details");
+      return;
+    }
+
+    // Ensure Razorpay is loaded
+    if (!window.Razorpay) {
+      toast.error("Payment system not available. Please try again later.");
+      return;
+    }
+
     const options = {
-      key: import.meta.env.RAZORPAY_KEY_ID,
-      amount: order.amount,
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Note: Vite requires VITE_ prefix
+      amount: order.amount.toString(), // Ensure amount is string
       currency: order.currency,
-      name: "Appointment Payment",
-      description: "Appointment Payment",
+      name: "My Healthcare App",
+      description: `Appointment #${order.receipt || 'NA'}`,
       order_id: order.id,
-      receipt: order.receipt,
+      image: "/logo.png", // Add your logo (recommended)
+      theme: {
+        color: "#3399cc" // Customize button color
+      },
       handler: async (response) => {
-        console.log(response);
         try {
           const { data } = await axios.post(
-            backendUrl + "/api/user/verifyRazorpay",
+            `${backendUrl}/api/user/verifyRazorpay`,
             {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
+              appointmentId: order.receipt // Pass original appointment ID
             },
-            { headers: { token } }
+            {
+              headers: {
+                Authorization: `Bearer ${token}` // Better header convention
+              }
+            }
           );
+
           if (data.success) {
-            getUserAppointment();
+            toast.success("Payment successful!");
+            await getUserAppointment(); // Refresh appointments
+          } else {
+            toast.error(data.message || "Payment verification failed");
           }
         } catch (error) {
-          console.log(error);
-          const errorMessage =
-            error.response?.data?.message ||
-            error.message ||
-            "Something went wrong";
-
+          console.error("Payment verification error:", error);
+          const errorMessage = error.response?.data?.message ||
+                             error.message ||
+                             "Payment verification failed";
           toast.error(errorMessage);
         }
       },
     };
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+
+    try {
+      const rzp = new window.Razorpay(options);
+
+      // Add error handlers
+      rzp.on("payment.failed", (response) => {
+        console.error("Payment failed:", response.error);
+        toast.error(`Payment failed: ${response.error.description}`);
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error("Razorpay init error:", err);
+      toast.error("Could not initialize payment gateway");
+    }
   };
 
   const appointmentRazorpay = async (appointmentId) => {

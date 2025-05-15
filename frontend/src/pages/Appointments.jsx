@@ -10,14 +10,8 @@ import ConfirmationModal from "../modals/ConfirmationModal";
 function Appointments() {
   const { docId } = useParams();
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-  const {
-    doctors,
-    currencySymbol,
-    backendUrl,
-    token,
-    getAllDoctorsData,
-    user,
-  } = useContext(AppContext);
+  const { doctors, currencySymbol, backendUrl, token, getAllDoctorsData } =
+    useContext(AppContext);
   const navigate = useNavigate();
 
   const [docInfo, setDocInfo] = useState();
